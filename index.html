@@ -87,9 +87,9 @@
           <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="app.actions.handleLogout()"><i class="bi bi-box-arrow-right"></i> Salir</button>
         </div>
         
-        <!-- El selector de almacén SOLO se visualiza en la pestaña de Movimientos de inventario -->
+        <!-- El selector de almacén SOLO se muestra en Movimientos de material -->
         <div id="seccionAlmacenHeader" class="d-none mt-2">
-          <label class="small text-white-50 mb-1 d-block">Almacén / Vehículo Activo:</label>
+          <label class="small text-white-50 mb-1 d-block">Mi Almacén / Vehículo Activo:</label>
           <select class="form-select form-select-sm fw-bold bg-dark text-white border-secondary" id="selAlmacenActivo" onchange="app.handlers.onCambioAlmacenActivo()">
           </select>
         </div>
@@ -140,7 +140,7 @@
             <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarCaja">Registrar en Caja</button>
           </form>
 
-          <!-- Formulario Traspaso Efectivo Persona a Persona -->
+          <!-- Formulario Traspaso de Dinero donde el usuario activo SIEMPRE es emisor o receptor -->
           <form id="formCajaTraspaso" class="d-none" onsubmit="app.actions.handleGuardarTraspasoCaja(event)">
             <input type="date" class="form-control mb-3" id="txtFechaTraspasoCaja" required>
             
@@ -149,14 +149,25 @@
               <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="txtImporteTraspasoCaja" placeholder="0.00" required>
             </div>
 
+            <!-- Selector de Dirección del Traspaso -->
             <div class="mb-3">
-              <label class="form-label small fw-bold text-secondary">Persona que Entrega el dinero (Emisor):</label>
-              <select class="form-select" id="selUsuarioOrigenCaja" required></select>
+              <label class="form-label small fw-bold text-secondary">Tipo de Traspaso:</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="btnSentidoTraspaso" id="radioEntregoDinero" autocomplete="off" checked onchange="app.handlers.onSentidoTraspasoChange()">
+                <label class="btn btn-outline-primary btn-sm fw-bold" for="radioEntregoDinero">📤 Yo entrego dinero a...</label>
+
+                <input type="radio" class="btn-check" name="btnSentidoTraspaso" id="radioReciboDinero" autocomplete="off" onchange="app.handlers.onSentidoTraspasoChange()">
+                <label class="btn btn-outline-success btn-sm fw-bold" for="radioReciboDinero">📥 Yo recibo dinero de...</label>
+              </div>
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-secondary">Persona que Recibe el dinero (Receptor):</label>
-              <select class="form-select" id="selUsuarioDestinoCaja" required></select>
+              <label class="form-label small fw-bold text-secondary" id="lblCompaneroTraspaso">Compañero que Recibe el dinero:</label>
+              <select class="form-select form-select-lg" id="selCompaneroTraspaso" required></select>
+            </div>
+
+            <div class="alert alert-light border small text-muted py-2 mb-3" id="lblResumenTraspaso">
+              Se transferirá el dinero entre tu caja y el compañero seleccionado.
             </div>
 
             <textarea class="form-control mb-3" id="taObsTraspasoCaja" rows="2" placeholder="Motivo o referencia del traspaso" maxlength="200"></textarea>
@@ -191,6 +202,18 @@
               </select>
             </div>
 
+            <!-- En TRASPASO: Opción para Enviar desde mi almacén o Traer hacia mi almacén -->
+            <div class="mb-3 d-none" id="bloqueSentidoTraspasoMaterial">
+              <label class="form-label small fw-bold text-secondary">Flujo del Traspaso:</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="btnFlujoMaterial" id="radioEnvioMaterial" autocomplete="off" checked onchange="app.handlers.onFlujoMaterialChange()">
+                <label class="btn btn-outline-dark btn-sm" for="radioEnvioMaterial">📤 Enviar desde mi almacén activo</label>
+
+                <input type="radio" class="btn-check" name="btnFlujoMaterial" id="radioTraigoMaterial" autocomplete="off" onchange="app.handlers.onFlujoMaterialChange()">
+                <label class="btn btn-outline-dark btn-sm" for="radioTraigoMaterial">📥 Traer hacia mi almacén activo</label>
+              </div>
+            </div>
+
             <div class="row g-2 mb-3">
               <div class="col-6">
                 <label class="form-label small fw-bold text-secondary">Origen *</label>
@@ -203,9 +226,9 @@
             </div>
 
             <div id="seccionCliente" class="p-2 mb-3 border rounded bg-light">
-              <span class="fw-bold small text-dark d-block mb-2"><i class="bi bi-person-badge me-1"></i>Datos del Cliente</span>
+              <span class="fw-bold small text-dark d-block mb-2"><i class="bi bi-person-badge me-1"></i>Datos del Receptor / Cliente</span>
               <input type="text" class="form-control form-control-sm mb-2" id="txtClienteReceptor" placeholder="Nombre y Apellidos Receptor *" required>
-              <input type="email" class="form-control form-control-sm mb-2" id="txtClienteEmail" placeholder="Email Receptor *" required>
+              <input type="email" class="form-control form-control-sm mb-2" id="txtClienteEmail" placeholder="Email Receptor (obligatorio en entrega)">
               <input type="text" class="form-control form-control-sm mb-2" id="txtClienteEmpresa" placeholder="Empresa / Razón Social (opcional)">
               <input type="text" class="form-control form-control-sm mb-2" id="txtClienteCif" placeholder="CIF / NIF (opcional)">
               <input type="text" class="form-control form-control-sm" id="txtClienteDireccion" placeholder="Dirección (opcional)">
@@ -264,7 +287,7 @@
 
       state: {
         token: null, usuario: null, nombreCompleto: null, esAdmin: false,
-        almacenes: [], almacenActivo: '',
+        almacenes: [], todosLosAlmacenes: [], almacenActivo: '',
         catalogo: {}, catalogoMap: {},
         stockAlmacenActivo: {},
         usuariosEfectivo: [],
@@ -334,7 +357,6 @@
           if (actBtn) actBtn.classList.add('active');
           if (actView) actView.classList.remove('d-none');
 
-          // Ocultar o mostrar el selector de almacén según la pestaña activa
           const secAlmHeader = document.getElementById('seccionAlmacenHeader');
           if (mod === 'almacen') {
             secAlmHeader.classList.remove('d-none');
@@ -415,6 +437,19 @@
         onTipoCajaChange(tipo) {
           document.getElementById('formCajaEstandar').classList.toggle('d-none', tipo === 'TRASPASO');
           document.getElementById('formCajaTraspaso').classList.toggle('d-none', tipo !== 'TRASPASO');
+          if (tipo === 'TRASPASO') app.handlers.onSentidoTraspasoChange();
+        },
+        onSentidoTraspasoChange() {
+          const entregaYo = document.getElementById('radioEntregoDinero').checked;
+          const lbl = document.getElementById('lblCompaneroTraspaso');
+          const resumen = document.getElementById('lblResumenTraspaso');
+          if (entregaYo) {
+            lbl.textContent = 'Compañero que Recibe el dinero:';
+            resumen.textContent = `Se RESTARÁ de tu saldo personal y se le ASIGNARÁ al compañero seleccionado.`;
+          } else {
+            lbl.textContent = 'Compañero que te Entrega el dinero:';
+            resumen.textContent = `Se SUMARÁ a tu saldo personal y se le DESCONTARÁ al compañero seleccionado.`;
+          }
         },
         async onFotoCajaSelected(input) {
           if (!input.files[0]) return;
@@ -428,32 +463,57 @@
           finally { app.ui.setLoader(false); }
         },
         limpiarFirma() { app.signature.limpiar(); },
+        onFlujoMaterialChange() {
+          app.handlers.onTipoMovimientoChange();
+        },
         onTipoMovimientoChange() {
           const tipo = document.getElementById('selTipoMovimiento').value;
           const sOri = document.getElementById('selOrigenMov');
           const sDes = document.getElementById('selDestinoMov');
+          const secFlujo = document.getElementById('bloqueSentidoTraspasoMaterial');
           sOri.replaceChildren(); sDes.replaceChildren();
 
-          const alm = app.state.almacenActivo || (app.state.almacenes[0] || 'NAVE 01');
+          const miAlm = app.state.almacenActivo || (app.state.almacenes[0] || 'NAVE 01');
+          const listaAlmacenesDisponibles = (app.state.todosLosAlmacenes && app.state.todosLosAlmacenes.length) 
+            ? app.state.todosLosAlmacenes 
+            : ['NAVE 01', 'OFICINA', 'FURGO01', 'FURGO02'];
 
           if (tipo === 'SALIDA') {
-            sOri.appendChild(new Option(alm, alm)); sOri.disabled = true;
+            secFlujo.classList.add('d-none');
+            sOri.appendChild(new Option(miAlm, miAlm)); sOri.disabled = true;
             sDes.appendChild(new Option('CLIENTE', 'CLIENTE')); sDes.disabled = true;
             document.getElementById('seccionCliente').classList.remove('d-none');
             document.getElementById('txtClienteReceptor').required = true;
             document.getElementById('txtClienteEmail').required = true;
+
           } else if (tipo === 'TRASPASO') {
-            sOri.appendChild(new Option(alm, alm)); sOri.disabled = true;
-            sDes.disabled = false;
-            app.state.almacenes.forEach(a => { if (a !== alm) sDes.appendChild(new Option(a, a)); });
+            secFlujo.classList.remove('d-none');
+            const envioDesdeMiAlmacen = document.getElementById('radioEnvioMaterial').checked;
+
+            if (envioDesdeMiAlmacen) {
+              // Origen fijo: mi almacén | Destino: otro almacén
+              sOri.appendChild(new Option(miAlm, miAlm));
+              sOri.disabled = true;
+              sDes.disabled = false;
+              listaAlmacenesDisponibles.forEach(a => { if (a !== miAlm) sDes.appendChild(new Option(a, a)); });
+            } else {
+              // Destino fijo: mi almacén | Origen: otro almacén desde el que traigo material
+              sDes.appendChild(new Option(miAlm, miAlm));
+              sDes.disabled = true;
+              sOri.disabled = false;
+              listaAlmacenesDisponibles.forEach(a => { if (a !== miAlm) sOri.appendChild(new Option(a, a)); });
+            }
+
             document.getElementById('seccionCliente').classList.remove('d-none');
             document.getElementById('txtClienteReceptor').required = true;
             document.getElementById('txtClienteEmail').required = false;
+
           } else if (tipo === 'ENTRADA') {
+            secFlujo.classList.add('d-none');
             sOri.disabled = false;
             sOri.appendChild(new Option('PROVEEDOR', 'PROVEEDOR'));
             sOri.appendChild(new Option('CLIENTE (Devolución)', 'CLIENTE'));
-            sDes.appendChild(new Option(alm, alm)); sDes.disabled = true;
+            sDes.appendChild(new Option(miAlm, miAlm)); sDes.disabled = true;
             sOri.onchange = () => {
               const esC = sOri.value === 'CLIENTE';
               document.getElementById('seccionCliente').classList.toggle('d-none', !esC);
@@ -498,6 +558,7 @@
           app.state.nombreCompleto = data.nombreCompleto;
           app.state.esAdmin = Boolean(data.esAdmin);
           app.state.almacenes = data.almacenesAsignados || [];
+          app.state.todosLosAlmacenes = data.todosLosAlmacenes || ['NAVE 01', 'OFICINA', 'FURGO01', 'FURGO02'];
           app.state.catalogo = data.catalogo || {};
           app.state.catalogoMap = data.catalogoMap || {};
           app.state.usuariosEfectivo = data.usuariosEfectivo || [];
@@ -515,30 +576,14 @@
           app.state.almacenActivo = selAlm.value || (app.state.almacenes[0] || '');
           document.getElementById('lblTituloStockAlm').textContent = app.state.almacenActivo;
 
-          // Población de los selectores de Traspaso de Efectivo (Persona a Persona)
-          const selUsrOri = document.getElementById('selUsuarioOrigenCaja');
-          const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
-          selUsrOri.replaceChildren();
-          selUsrDest.replaceChildren();
-
+          // En Traspaso de Dinero: Se muestran únicamente los OTROS compañeros
+          const selComp = document.getElementById('selCompaneroTraspaso');
+          selComp.replaceChildren();
           app.state.usuariosEfectivo.forEach(u => {
-            selUsrOri.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
-            selUsrDest.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
-          });
-
-          // Quien entrega por defecto es el usuario conectado
-          selUsrOri.value = app.state.usuario;
-          if (!app.state.esAdmin) {
-            selUsrOri.disabled = true; // El técnico solo puede entregar de su propio saldo
-          }
-
-          // Seleccionar un destinatario distinto por defecto
-          for (let opt of selUsrDest.options) {
-            if (opt.value !== app.state.usuario) {
-              selUsrDest.value = opt.value;
-              break;
+            if (u.usuario !== app.state.usuario) {
+              selComp.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
             }
-          }
+          });
 
           document.getElementById('txtFechaCaja').valueAsDate = new Date();
           document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
@@ -546,7 +591,6 @@
           document.getElementById('viewLogin').classList.add('d-none');
           document.getElementById('viewMain').classList.remove('d-none');
 
-          // Mostrar por defecto la pestaña Cartera (con el selector de almacén oculto)
           app.ui.switchModule('cartera');
         },
 
@@ -651,13 +695,19 @@
 
         async handleGuardarTraspasoCaja(e) {
           e.preventDefault();
-          const selUsrOri = document.getElementById('selUsuarioOrigenCaja');
-          const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
+          const entregaYo = document.getElementById('radioEntregoDinero').checked;
+          const selComp = document.getElementById('selCompaneroTraspaso');
 
-          if (selUsrOri.value === selUsrDest.value) {
-            app.ui.showToast('Quién entrega y quién recibe no pueden ser la misma persona', 'warning');
+          if (!selComp.value) {
+            app.ui.showToast('Selecciona a un compañero', 'warning');
             return;
           }
+
+          const usuarioOrigen = entregaYo ? app.state.usuario : selComp.value;
+          const nombreOrigen = entregaYo ? app.state.nombreCompleto : selComp.options[selComp.selectedIndex].text;
+
+          const usuarioDestino = entregaYo ? selComp.value : app.state.usuario;
+          const nombreDestino = entregaYo ? selComp.options[selComp.selectedIndex].text : app.state.nombreCompleto;
 
           const btns = document.querySelectorAll('.submit-btn'); btns.forEach(b => b.disabled = true);
           app.ui.setLoader(true, 'Procesando traspaso de dinero...');
@@ -669,10 +719,10 @@
                 idempotencyKey: app.utils.generarIdem('TRF_EFEC'),
                 fecha: document.getElementById('txtFechaTraspasoCaja').value,
                 importe: document.getElementById('txtImporteTraspasoCaja').value,
-                usuarioOrigen: selUsrOri.value,
-                nombreOrigen: selUsrOri.options[selUsrOri.selectedIndex].text,
-                usuarioDestino: selUsrDest.value,
-                nombreDestino: selUsrDest.options[selUsrDest.selectedIndex].text,
+                usuarioOrigen: usuarioOrigen,
+                nombreOrigen: nombreOrigen,
+                usuarioDestino: usuarioDestino,
+                nombreDestino: nombreDestino,
                 comentarios: document.getElementById('taObsTraspasoCaja').value
               }
             });
@@ -681,6 +731,8 @@
               app.ui.showToast('✅ Traspaso completado con éxito', 'success');
               document.getElementById('formCajaTraspaso').reset();
               document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
+              document.getElementById('radioEntregoDinero').checked = true;
+              app.handlers.onSentidoTraspasoChange();
               document.getElementById('radioGasto').click();
               if (res.nuevoSaldo !== undefined) {
                 document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.nuevoSaldo).toFixed(2) + ' €';
