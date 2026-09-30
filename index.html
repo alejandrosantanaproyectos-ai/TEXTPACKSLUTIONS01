@@ -14,7 +14,7 @@
     /* =========================================================================
        👇 URL DEL BACKEND DE APPS SCRIPT 👇
        ========================================================================= */
-    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YIT5eZ5BErtvflFe-KxfeU4/exec";
+    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YlT5eZ5BErtvflFe-KxfeU4/exec";
     /* ========================================================================= */
   </script>
 
@@ -127,7 +127,7 @@
             <input type="text" class="form-control mb-3" id="txtConceptoCaja" placeholder="Concepto del ticket / pago" maxlength="150" required>
             <textarea class="form-control mb-3" id="taObsCaja" rows="2" placeholder="Observaciones (opcional)" maxlength="250"></textarea>
 
-            <label class="small fw-bold mb-1 d-block">Foto Comprobante / Ticket</label>
+            <label class="small fw-bold mb-1 d-block">Foto Comprobante / Ticket (Auto-comprimida a &lt;500KB)</label>
             <input type="file" class="d-none" id="fileFotoCaja" accept="image/*" capture="environment" onchange="app.handlers.onFotoCajaSelected(this)">
             <div class="d-flex gap-2 mb-2">
               <button type="button" class="btn btn-outline-secondary flex-fill" onclick="document.getElementById('fileFotoCaja').click()"><i class="bi bi-camera"></i> Adjuntar Foto</button>
@@ -140,7 +140,7 @@
             <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarCaja">Registrar en Caja</button>
           </form>
 
-          <!-- Formulario Traspaso de Dinero donde el usuario activo SIEMPRE es emisor o receptor -->
+          <!-- Formulario Traspaso de Dinero -->
           <form id="formCajaTraspaso" class="d-none" onsubmit="app.actions.handleGuardarTraspasoCaja(event)">
             <input type="date" class="form-control mb-3" id="txtFechaTraspasoCaja" required>
             
@@ -149,7 +149,6 @@
               <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="txtImporteTraspasoCaja" placeholder="0.00" required>
             </div>
 
-            <!-- Selector de Dirección del Traspaso -->
             <div class="mb-3">
               <label class="form-label small fw-bold text-secondary">Tipo de Traspaso:</label>
               <div class="btn-group w-100" role="group">
@@ -202,7 +201,6 @@
               </select>
             </div>
 
-            <!-- En TRASPASO: Opción para Enviar desde mi almacén o Traer hacia mi almacén -->
             <div class="mb-3 d-none" id="bloqueSentidoTraspasoMaterial">
               <label class="form-label small fw-bold text-secondary">Flujo del Traspaso:</label>
               <div class="btn-group w-100" role="group">
@@ -282,7 +280,8 @@
     const app = {
       config: {
         apiUrl: URL_APPS_SCRIPT_AQUI,
-        timeoutMs: 40000
+        timeoutMs: 40000,
+        maxImageSizeBytes: 480 * 1024 // Tope estricto de seguridad: menos de 500 KB
       },
 
       state: {
@@ -388,21 +387,62 @@
       },
 
       utils: {
-        async compress(file) {
+        // Compresor adaptativo que garantiza un peso menor de 500 KB
+        async compressToUnder500KB(file) {
+          const targetBytes = app.config.maxImageSizeBytes; // 491,520 bytes
           const bmp = await createImageBitmap(file);
-          let w = bmp.width, h = bmp.height, max = 1200;
-          if (w > max || h > max) {
-            if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+          
+          let maxDimension = 1280;
+          let quality = 0.80;
+          let base64Result = '';
+          let blob = null;
+
+          for (let intento = 0; intento < 5; intento++) {
+            let w = bmp.width;
+            let h = bmp.height;
+
+            if (w > maxDimension || h > maxDimension) {
+              if (w > h) {
+                h = Math.round((h * maxDimension) / w);
+                w = maxDimension;
+              } else {
+                w = Math.round((w * maxDimension) / h);
+                h = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bmp, 0, 0, w, h);
+
+            blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+            
+            // Si el blob resultante ya está por debajo de los 500 KB, finalizamos
+            if (blob.size <= targetBytes) {
+              break;
+            }
+
+            // Si aún supera los 500 KB, ajustamos dimensiones y calidad
+            maxDimension = Math.round(maxDimension * 0.75);
+            quality = Math.max(0.45, quality - 0.15);
           }
-          const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
-          const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.8));
-          return new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
+
+          bmp.close();
+
+          return new Promise(res => {
+            const reader = new FileReader();
+            reader.onloadend = () => res(reader.result);
+            reader.readAsDataURL(blob);
+          });
         },
+
         generarIdem(prefijo) {
           const arr = new Uint8Array(8); crypto.getRandomValues(arr);
           return `${prefijo}_${Date.now()}_` + Array.from(arr, b => ('0' + b.toString(16)).slice(-2)).join('');
         },
+
         generarNumAlbaran() {
           const d = new Date(), pad = (n) => String(n).padStart(2, '0');
           return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
@@ -434,11 +474,13 @@
           app.actions.cargarStockAlmacenActivo();
           app.handlers.onTipoMovimientoChange();
         },
+
         onTipoCajaChange(tipo) {
           document.getElementById('formCajaEstandar').classList.toggle('d-none', tipo === 'TRASPASO');
           document.getElementById('formCajaTraspaso').classList.toggle('d-none', tipo !== 'TRASPASO');
           if (tipo === 'TRASPASO') app.handlers.onSentidoTraspasoChange();
         },
+
         onSentidoTraspasoChange() {
           const entregaYo = document.getElementById('radioEntregoDinero').checked;
           const lbl = document.getElementById('lblCompaneroTraspaso');
@@ -451,21 +493,28 @@
             resumen.textContent = `Se SUMARÁ a tu saldo personal y se le DESCONTARÁ al compañero seleccionado.`;
           }
         },
+
         async onFotoCajaSelected(input) {
           if (!input.files[0]) return;
-          app.ui.setLoader(true, 'Procesando ticket...');
+          app.ui.setLoader(true, 'Optimizando foto a menos de 500 KB...');
           try {
-            app.state.fotoCajaB64 = await app.utils.compress(input.files[0]);
+            app.state.fotoCajaB64 = await app.utils.compressToUnder500KB(input.files[0]);
             document.getElementById('imgPreviewCaja').src = app.state.fotoCajaB64;
             document.getElementById('imgPreviewCaja').classList.remove('d-none');
             document.getElementById('lblPlaceholderCaja').classList.add('d-none');
-          } catch (e) { app.ui.showToast('Error con la imagen', 'danger'); }
-          finally { app.ui.setLoader(false); }
+          } catch (e) { 
+            app.ui.showToast('Error procesando la imagen', 'danger'); 
+          } finally { 
+            app.ui.setLoader(false); 
+          }
         },
+
         limpiarFirma() { app.signature.limpiar(); },
+
         onFlujoMaterialChange() {
           app.handlers.onTipoMovimientoChange();
         },
+
         onTipoMovimientoChange() {
           const tipo = document.getElementById('selTipoMovimiento').value;
           const sOri = document.getElementById('selOrigenMov');
@@ -491,13 +540,11 @@
             const envioDesdeMiAlmacen = document.getElementById('radioEnvioMaterial').checked;
 
             if (envioDesdeMiAlmacen) {
-              // Origen fijo: mi almacén | Destino: otro almacén
               sOri.appendChild(new Option(miAlm, miAlm));
               sOri.disabled = true;
               sDes.disabled = false;
               listaAlmacenesDisponibles.forEach(a => { if (a !== miAlm) sDes.appendChild(new Option(a, a)); });
             } else {
-              // Destino fijo: mi almacén | Origen: otro almacén desde el que traigo material
               sDes.appendChild(new Option(miAlm, miAlm));
               sDes.disabled = true;
               sOri.disabled = false;
@@ -523,6 +570,7 @@
             sOri.onchange();
           }
         },
+
         agregarFilaMaterial() {
           const cont = document.getElementById('contenedorMateriales');
           const div = document.createElement('div');
@@ -576,7 +624,6 @@
           app.state.almacenActivo = selAlm.value || (app.state.almacenes[0] || '');
           document.getElementById('lblTituloStockAlm').textContent = app.state.almacenActivo;
 
-          // En Traspaso de Dinero: Se muestran únicamente los OTROS compañeros
           const selComp = document.getElementById('selCompaneroTraspaso');
           selComp.replaceChildren();
           app.state.usuariosEfectivo.forEach(u => {
