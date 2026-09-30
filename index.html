@@ -14,7 +14,7 @@
     /* =========================================================================
        👇 PEGA AQUÍ TU URL DEL BACKEND DE APPS SCRIPT (TERMINADA EN /exec) 👇
        ========================================================================= */
-    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YlT5eZ5BErtvflFe-KxfeU4/exec";
+    const URL_APPS_SCRIPT_AQUI = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
     /* ========================================================================= */
   </script>
 
@@ -322,7 +322,7 @@
               </div>
             </div>
 
-            <!-- Datos de Cliente (Visibles si aplica firma/albarán cliente) -->
+            <!-- Datos de Cliente -->
             <div id="seccionCliente" class="p-2 mb-3 border rounded bg-light">
               <span class="fw-bold small text-dark d-block mb-2"><i class="bi bi-person-badge me-1"></i>Datos del Cliente</span>
               <input type="text" class="form-control form-control-sm mb-2" id="txtClienteReceptor" placeholder="Nombre y Apellidos Receptor *" required>
@@ -341,7 +341,7 @@
               <div id="contenedorMateriales"></div>
             </div>
 
-            <!-- Foto Factura (en caso de Entrada Proveedor) -->
+            <!-- Foto Factura (Entrada Proveedor) -->
             <div id="seccionFotoProveedor" class="mb-3 d-none">
               <label class="small fw-bold mb-1 d-block">Foto Factura / Albarán Compra</label>
               <input type="file" class="d-none" id="fileFotoDoc" accept="image/*" capture="environment" onchange="app.handlers.onFotoDocSelected(this)">
@@ -816,7 +816,6 @@
               document.getElementById('labelUserCode').textContent = res.usuario;
               document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.saldoEfectivo || 0).toFixed(2) + ' €';
 
-              // Poblar selector de almacenes asignados
               const selAlm = document.getElementById('selAlmacenActivo');
               selAlm.replaceChildren();
               app.state.almacenes.forEach(a => {
@@ -831,7 +830,6 @@
               app.state.almacenActivo = selAlm.value;
               document.getElementById('lblTituloStockAlm').textContent = app.state.almacenActivo;
 
-              // Poblar selector de usuarios para traspasos de efectivo
               const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
               selUsrDest.replaceChildren();
               app.state.usuariosEfectivo.forEach(u => {
@@ -1056,7 +1054,10 @@
             const res = await app.api.req('obtenerUltimosAlbaranes', { token: app.state.token });
             if (res.success && res.albaranes) {
               if (res.albaranes.length === 0) {
-                cont.innerHTML = '<div class="text-center text-muted py-3">No hay albaranes registrados</div>';
+                const emptyDiv = document.createElement('div');
+                emptyDiv.className = 'text-center text-muted py-3';
+                emptyDiv.textContent = 'No hay albaranes registrados';
+                cont.appendChild(emptyDiv);
                 return;
               }
 
@@ -1064,14 +1065,27 @@
                 const card = document.createElement('div');
                 card.className = 'border rounded p-2 mb-2 bg-light';
 
+                // Cabecera del albarán (sin innerHTML para evitar XSS)
                 const dTop = document.createElement('div');
                 dTop.className = 'd-flex justify-content-between align-items-center mb-1';
-                dTop.innerHTML = `<span class="fw-bold">${alb.numAlbaran}</span><span class="badge bg-dark">${alb.tipo}</span>`;
+                
+                const spAlbaran = document.createElement('span');
+                spAlbaran.className = 'fw-bold';
+                spAlbaran.textContent = alb.numAlbaran;
 
+                const spBadge = document.createElement('span');
+                spBadge.className = 'badge bg-dark';
+                spBadge.textContent = alb.tipo;
+
+                dTop.appendChild(spAlbaran);
+                dTop.appendChild(spBadge);
+
+                // Datos de fecha y ruta
                 const dMid = document.createElement('div');
                 dMid.className = 'small text-secondary mb-1';
                 dMid.textContent = `Fecha: ${alb.fecha} | De: ${alb.origen} ➔ A: ${alb.destino}`;
 
+                // Resumen de artículos y botón de enlace
                 const dBot = document.createElement('div');
                 dBot.className = 'd-flex justify-content-between align-items-center mt-2';
                 
@@ -1088,6 +1102,7 @@
                   const aLink = document.createElement('a');
                   aLink.href = alb.urlPdf;
                   aLink.target = '_blank';
+                  aLink.rel = 'noopener noreferrer';
                   aLink.className = 'btn btn-sm btn-outline-dark py-0';
                   aLink.innerHTML = '<i class="bi bi-file-pdf me-1"></i>PDF';
                   dBot.appendChild(aLink);
