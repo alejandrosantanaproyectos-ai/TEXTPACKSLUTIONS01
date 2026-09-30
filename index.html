@@ -12,9 +12,9 @@
 
   <script>
     /* =========================================================================
-       👇 PEGA AQUÍ TU URL DEL BACKEND DE APPS SCRIPT (TERMINADA EN /exec) 👇
+       👇 URL DEL BACKEND DE APPS SCRIPT 👇
        ========================================================================= */
-    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YlT5eZ5BErtvflFe-KxfeU4/exec";
+    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YIT5eZ5BErtvflFe-KxfeU4/exec";
     /* ========================================================================= */
   </script>
 
@@ -79,15 +79,17 @@
     <div class="d-none" id="viewMain">
       
       <div class="header-box">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
           <div>
             <h6 class="mb-0 fw-bold" id="labelUsuarioSesion">Usuario</h6>
             <small class="text-white-50" id="labelUserCode">OPERADOR</small>
           </div>
           <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="app.actions.handleLogout()"><i class="bi bi-box-arrow-right"></i> Salir</button>
         </div>
-        <div>
-          <label class="small text-white-50 mb-1 d-block">Almacén Activo:</label>
+        
+        <!-- El selector de almacén SOLO se visualiza en la pestaña de Movimientos de inventario -->
+        <div id="seccionAlmacenHeader" class="d-none mt-2">
+          <label class="small text-white-50 mb-1 d-block">Almacén / Vehículo Activo:</label>
           <select class="form-select form-select-sm fw-bold bg-dark text-white border-secondary" id="selAlmacenActivo" onchange="app.handlers.onCambioAlmacenActivo()">
           </select>
         </div>
@@ -96,12 +98,12 @@
       <!-- MÓDULO 1: CARTERA DE EFECTIVO -->
       <div id="moduleCartera" class="px-1 pb-4">
         <div class="wallet-card mb-3">
-          <small class="text-white-50 text-uppercase fw-bold">Mi Saldo de Caja</small>
+          <small class="text-white-50 text-uppercase fw-bold">Mi Saldo de Caja Personal</small>
           <h2 class="display-6 fw-bold my-1" id="lblSaldoEfectivo">0,00 €</h2>
         </div>
 
         <div class="card card-custom p-3 mb-3">
-          <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2"></i>Movimiento de Caja</h6>
+          <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2"></i>Movimiento de Dinero</h6>
           
           <div class="btn-group w-100 mb-3" role="group">
             <input type="radio" class="btn-check" name="btnRadioCaja" id="radioGasto" autocomplete="off" checked onchange="app.handlers.onTipoCajaChange('GASTO')">
@@ -111,9 +113,10 @@
             <label class="btn btn-outline-dark" for="radioIngreso">Ingreso</label>
 
             <input type="radio" class="btn-check" name="btnRadioCaja" id="radioTraspaso" autocomplete="off" onchange="app.handlers.onTipoCajaChange('TRASPASO')">
-            <label class="btn btn-outline-dark" for="radioTraspaso">Traspaso</label>
+            <label class="btn btn-outline-dark" for="radioTraspaso">Traspaso a Compañero</label>
           </div>
 
+          <!-- Formulario Gasto / Ingreso -->
           <form id="formCajaEstandar" onsubmit="app.actions.handleGuardarCajaEstandar(event)">
             <input type="date" class="form-control mb-3" id="txtFechaCaja" required>
             <div class="input-group mb-3">
@@ -124,31 +127,40 @@
             <input type="text" class="form-control mb-3" id="txtConceptoCaja" placeholder="Concepto del ticket / pago" maxlength="150" required>
             <textarea class="form-control mb-3" id="taObsCaja" rows="2" placeholder="Observaciones (opcional)" maxlength="250"></textarea>
 
-            <label class="small fw-bold mb-1 d-block">Foto Comprobante</label>
+            <label class="small fw-bold mb-1 d-block">Foto Comprobante / Ticket</label>
             <input type="file" class="d-none" id="fileFotoCaja" accept="image/*" capture="environment" onchange="app.handlers.onFotoCajaSelected(this)">
             <div class="d-flex gap-2 mb-2">
-              <button type="button" class="btn btn-outline-secondary flex-fill" onclick="document.getElementById('fileFotoCaja').click()"><i class="bi bi-camera"></i> Foto</button>
+              <button type="button" class="btn btn-outline-secondary flex-fill" onclick="document.getElementById('fileFotoCaja').click()"><i class="bi bi-camera"></i> Adjuntar Foto</button>
             </div>
             <div class="preview-container mb-3" id="boxPreviewCaja">
               <img id="imgPreviewCaja" class="d-none">
-              <small class="text-muted" id="lblPlaceholderCaja">Sin ticket adjunto</small>
+              <small class="text-muted" id="lblPlaceholderCaja">Sin comprobante adjunto</small>
             </div>
 
             <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarCaja">Registrar en Caja</button>
           </form>
 
+          <!-- Formulario Traspaso Efectivo Persona a Persona -->
           <form id="formCajaTraspaso" class="d-none" onsubmit="app.actions.handleGuardarTraspasoCaja(event)">
             <input type="date" class="form-control mb-3" id="txtFechaTraspasoCaja" required>
+            
             <div class="input-group mb-3">
               <span class="input-group-text fw-bold">€</span>
               <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="txtImporteTraspasoCaja" placeholder="0.00" required>
             </div>
+
             <div class="mb-3">
-              <label class="form-label small fw-bold text-secondary">Traspasar a:</label>
-              <select class="form-select form-select-lg" id="selUsuarioDestinoCaja" required></select>
+              <label class="form-label small fw-bold text-secondary">Persona que Entrega el dinero (Emisor):</label>
+              <select class="form-select" id="selUsuarioOrigenCaja" required></select>
             </div>
-            <textarea class="form-control mb-3" id="taObsTraspasoCaja" rows="2" placeholder="Motivo o referencia" maxlength="200"></textarea>
-            <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarTraspasoCaja">Confirmar Traspaso</button>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary">Persona que Recibe el dinero (Receptor):</label>
+              <select class="form-select" id="selUsuarioDestinoCaja" required></select>
+            </div>
+
+            <textarea class="form-control mb-3" id="taObsTraspasoCaja" rows="2" placeholder="Motivo o referencia del traspaso" maxlength="200"></textarea>
+            <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarTraspasoCaja">Confirmar Traspaso de Dinero</button>
           </form>
         </div>
       </div>
@@ -168,13 +180,13 @@
         </div>
 
         <div class="card card-custom p-3 mb-3">
-          <h6 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-1"></i>Nuevo Movimiento</h6>
+          <h6 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-1"></i>Nuevo Movimiento de Material</h6>
           <form id="formInventario" onsubmit="app.actions.handleGuardarMovimientoInventario(event)">
             <div class="mb-3">
               <label class="form-label small fw-bold text-secondary">Operación *</label>
               <select class="form-select fw-bold" id="selTipoMovimiento" onchange="app.handlers.onTipoMovimientoChange()" required>
                 <option value="SALIDA">📤 SALIDA (A Cliente)</option>
-                <option value="TRASPASO">🔄 TRASPASO (Entre Almacenes)</option>
+                <option value="TRASPASO">🔄 TRASPASO (Entre Almacenes/Furgones)</option>
                 <option value="ENTRADA">📥 ENTRADA (De Proveedor / Devolución)</option>
               </select>
             </div>
@@ -322,8 +334,17 @@
           if (actBtn) actBtn.classList.add('active');
           if (actView) actView.classList.remove('d-none');
 
+          // Ocultar o mostrar el selector de almacén según la pestaña activa
+          const secAlmHeader = document.getElementById('seccionAlmacenHeader');
+          if (mod === 'almacen') {
+            secAlmHeader.classList.remove('d-none');
+            app.actions.cargarStockAlmacenActivo();
+            setTimeout(() => app.signature.init(), 100);
+          } else {
+            secAlmHeader.classList.add('d-none');
+          }
+
           if (mod === 'cartera') app.actions.cargarSaldoEfectivo();
-          if (mod === 'almacen') { app.actions.cargarStockAlmacenActivo(); setTimeout(() => app.signature.init(), 100); }
           if (mod === 'albaranes') app.actions.cargarUltimosAlbaranes();
         },
         renderStockTable(stockObj) {
@@ -494,11 +515,30 @@
           app.state.almacenActivo = selAlm.value || (app.state.almacenes[0] || '');
           document.getElementById('lblTituloStockAlm').textContent = app.state.almacenActivo;
 
+          // Población de los selectores de Traspaso de Efectivo (Persona a Persona)
+          const selUsrOri = document.getElementById('selUsuarioOrigenCaja');
           const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
+          selUsrOri.replaceChildren();
           selUsrDest.replaceChildren();
+
           app.state.usuariosEfectivo.forEach(u => {
-            if (u.usuario !== app.state.usuario) selUsrDest.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
+            selUsrOri.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
+            selUsrDest.appendChild(new Option(`${u.nombre} (${u.usuario})`, u.usuario));
           });
+
+          // Quien entrega por defecto es el usuario conectado
+          selUsrOri.value = app.state.usuario;
+          if (!app.state.esAdmin) {
+            selUsrOri.disabled = true; // El técnico solo puede entregar de su propio saldo
+          }
+
+          // Seleccionar un destinatario distinto por defecto
+          for (let opt of selUsrDest.options) {
+            if (opt.value !== app.state.usuario) {
+              selUsrDest.value = opt.value;
+              break;
+            }
+          }
 
           document.getElementById('txtFechaCaja').valueAsDate = new Date();
           document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
@@ -506,8 +546,8 @@
           document.getElementById('viewLogin').classList.add('d-none');
           document.getElementById('viewMain').classList.remove('d-none');
 
-          app.handlers.onTipoMovimientoChange();
-          app.actions.cargarStockAlmacenActivo();
+          // Mostrar por defecto la pestaña Cartera (con el selector de almacén oculto)
+          app.ui.switchModule('cartera');
         },
 
         async handleLogin(e) {
@@ -611,9 +651,16 @@
 
         async handleGuardarTraspasoCaja(e) {
           e.preventDefault();
+          const selUsrOri = document.getElementById('selUsuarioOrigenCaja');
+          const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
+
+          if (selUsrOri.value === selUsrDest.value) {
+            app.ui.showToast('Quién entrega y quién recibe no pueden ser la misma persona', 'warning');
+            return;
+          }
+
           const btns = document.querySelectorAll('.submit-btn'); btns.forEach(b => b.disabled = true);
-          app.ui.setLoader(true, 'Procesando traspaso...');
-          const selUsr = document.getElementById('selUsuarioDestinoCaja');
+          app.ui.setLoader(true, 'Procesando traspaso de dinero...');
 
           try {
             const res = await app.api.req('registrarTraspasoEfectivo', {
@@ -622,18 +669,22 @@
                 idempotencyKey: app.utils.generarIdem('TRF_EFEC'),
                 fecha: document.getElementById('txtFechaTraspasoCaja').value,
                 importe: document.getElementById('txtImporteTraspasoCaja').value,
-                usuarioDestino: selUsr.value,
-                nombreDestino: selUsr.options[selUsr.selectedIndex].text,
+                usuarioOrigen: selUsrOri.value,
+                nombreOrigen: selUsrOri.options[selUsrOri.selectedIndex].text,
+                usuarioDestino: selUsrDest.value,
+                nombreDestino: selUsrDest.options[selUsrDest.selectedIndex].text,
                 comentarios: document.getElementById('taObsTraspasoCaja').value
               }
             });
 
             if (res.success) {
-              app.ui.showToast('✅ Traspaso completado', 'success');
+              app.ui.showToast('✅ Traspaso completado con éxito', 'success');
               document.getElementById('formCajaTraspaso').reset();
               document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
               document.getElementById('radioGasto').click();
-              document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.nuevoSaldo || 0).toFixed(2) + ' €';
+              if (res.nuevoSaldo !== undefined) {
+                document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.nuevoSaldo).toFixed(2) + ' €';
+              }
             } else {
               app.ui.showToast(res.error || 'Error en traspaso', 'danger');
             }
