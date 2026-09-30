@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://script.google.com https://*.googleusercontent.com; img-src 'self' data: blob: https:; connect-src 'self' https://cdn.jsdelivr.net https://script.google.com https://*.googleusercontent.com;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <title>Text Pack Solutions - Logística</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+  <script>
+    /* =========================================================================
+       👇 PEGA AQUÍ TU URL DEL BACKEND DE APPS SCRIPT (TERMINADA EN /exec) 👇
+       ========================================================================= */
+    const URL_APPS_SCRIPT_AQUI = "https://script.google.com/macros/s/AKfycbxxtTLv3asRTDBZoy0gR6gpeU3Xr1jcBsy8xioMtxnh3YlT5eZ5BErtvflFe-KxfeU4/exec";
+    /* ========================================================================= */
+  </script>
+
+  <style>
+    :root { 
+      --tp-dark: #1e293b; 
+      --tp-accent: #334155; 
+      --tp-bg: #f8fafc; 
+    }
+    body { 
+      background-color: var(--tp-bg); 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      color: #1e293b; 
+      padding-bottom: 85px; 
+    }
+    .card-custom { 
+      border-radius: 12px; 
+      border: 1px solid #e2e8f0; 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); 
+      background-color: #fff; 
+    }
+    .header-box { 
+      background: var(--tp-dark); 
+      color: #fff; 
+      padding: 16px 20px; 
+      border-radius: 0 0 16px 16px; 
+      margin-bottom: 18px; 
+    }
+    .btn-dark-custom { 
+      background-color: var(--tp-dark); 
+      color: #fff; 
+      border: none; 
+      font-weight: 600; 
+      border-radius: 8px; 
+    }
+    .btn-dark-custom:hover { 
+      background-color: #0f172a; 
+      color: #fff; 
+    }
+    .bottom-nav { 
+      position: fixed; 
+      bottom: 0; 
+      left: 0; 
+      width: 100%; 
+      background: #ffffff; 
+      box-shadow: 0 -3px 12px rgba(0,0,0,0.06); 
+      display: flex; 
+      justify-content: space-around; 
+      z-index: 1000; 
+      padding-bottom: env(safe-area-inset-bottom); 
+      border-top: 1px solid #e2e8f0; 
+    }
+    .nav-item-bottom { 
+      flex: 1; 
+      text-align: center; 
+      padding: 10px 0 8px 0; 
+      color: #64748b; 
+      font-size: 0.75rem; 
+      cursor: pointer; 
+      border-top: 3px solid transparent; 
+      transition: all 0.2s; 
+    }
+    .nav-item-bottom.active { 
+      color: var(--tp-dark); 
+      border-top-color: var(--tp-dark); 
+      font-weight: 700; 
+      background-color: #f1f5f9; 
+    }
+    .nav-item-bottom i { 
+      font-size: 1.35rem; 
+      display: block; 
+      margin-bottom: 2px; 
+    }
+    .wallet-card { 
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%); 
+      color: white; 
+      border-radius: 12px; 
+      padding: 18px; 
+      text-align: center; 
+    }
+    .mat-row { 
+      background-color: #f8fafc; 
+      border: 1px solid #cbd5e1; 
+      border-radius: 8px; 
+      padding: 10px; 
+      margin-bottom: 8px; 
+      border-left: 4px solid var(--tp-dark); 
+    }
+    .signature-pad-box { 
+      border: 2px dashed #94a3b8; 
+      background-color: #ffffff; 
+      border-radius: 8px; 
+      position: relative; 
+      touch-action: none; 
+      cursor: crosshair; 
+    }
+    canvas { 
+      width: 100%; 
+      height: 160px; 
+      display: block; 
+    }
+    .loader-overlay { 
+      display: none; 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(15, 23, 42, 0.85); 
+      backdrop-filter: blur(4px); 
+      z-index: 9999; 
+      justify-content: center; 
+      align-items: center; 
+      flex-direction: column; 
+      color: #fff; 
+    }
+    .preview-container { 
+      width: 100%; 
+      height: 110px; 
+      border: 2px dashed #cbd5e1; 
+      border-radius: 8px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background-color: #f8fafc; 
+      overflow: hidden; 
+    }
+    .preview-container img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+    }
+    .toast-container { 
+      position: fixed; 
+      top: 15px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      z-index: 10000; 
+      width: 90%; 
+      max-width: 380px; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Alerta Offline -->
+  <div id="offlineWarning" style="position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; color: #fff; text-align: center; padding: 6px; font-weight: bold; font-size: 0.85rem; z-index: 2000; display: none;">
+    <i class="bi bi-wifi-off me-2"></i>Sin conexión a internet.
+  </div>
+  
+  <!-- Overlay de Carga -->
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="spinner-border text-light" style="width: 2.8rem; height: 2.8rem;" role="status"></div>
+    <div class="mt-3 fw-bold fs-6" id="loaderStatusText">Procesando...</div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="container py-2" style="max-width: 600px;">
+    
+    <!-- PANTALLA LOGIN -->
+    <div class="card card-custom mb-4" id="viewLogin">
+      <div class="header-box text-center mb-0" style="border-radius: 12px 12px 0 0;">
+        <h4 class="mb-0 fw-bold">TEXT PACK SOLUTIONS</h4>
+        <small class="text-white-50">Acceso Operativo</small>
+      </div>
+      <div class="card-body p-4">
+        <form id="formLogin" onsubmit="app.actions.handleLogin(event)">
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-secondary">Usuario</label>
+            <input type="text" class="form-control form-control-lg" id="inputUser" required autocomplete="username">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-bold small text-secondary">Contraseña</label>
+            <input type="password" class="form-control form-control-lg" id="inputPass" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-dark-custom w-100 py-3 fs-5" id="btnLoginSubmit">Acceder</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL -->
+    <div class="d-none" id="viewMain">
+      
+      <!-- Cabecera Superior de Sesión -->
+      <div class="header-box">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <h6 class="mb-0 fw-bold" id="labelUsuarioSesion">Usuario</h6>
+            <small class="text-white-50" id="labelUserCode">OPERADOR</small>
+          </div>
+          <button class="btn btn-sm btn-outline-light rounded-pill px-3" onclick="app.actions.handleLogout()"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </div>
+        <div>
+          <label class="small text-white-50 mb-1 d-block">Almacén de Trabajo Activo:</label>
+          <select class="form-select form-select-sm fw-bold bg-dark text-white border-secondary" id="selAlmacenActivo" onchange="app.handlers.onCambioAlmacenActivo()">
+          </select>
+        </div>
+      </div>
+
+      <!-- MÓDULO 1: CARTERA DE EFECTIVO -->
+      <div id="moduleCartera" class="px-1 pb-4">
+        <div class="wallet-card mb-3">
+          <small class="text-white-50 text-uppercase fw-bold">Mi Saldo de Caja</small>
+          <h2 class="display-6 fw-bold my-1" id="lblSaldoEfectivo">0,00 €</h2>
+        </div>
+
+        <div class="card card-custom p-3 mb-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 me-2"></i>Movimiento de Caja</h6>
+          
+          <div class="btn-group w-100 mb-3" role="group">
+            <input type="radio" class="btn-check" name="btnRadioCaja" id="radioGasto" autocomplete="off" checked onchange="app.handlers.onTipoCajaChange('GASTO')">
+            <label class="btn btn-outline-dark" for="radioGasto">Gasto</label>
+
+            <input type="radio" class="btn-check" name="btnRadioCaja" id="radioIngreso" autocomplete="off" onchange="app.handlers.onTipoCajaChange('INGRESO')">
+            <label class="btn btn-outline-dark" for="radioIngreso">Ingreso</label>
+
+            <input type="radio" class="btn-check" name="btnRadioCaja" id="radioTraspaso" autocomplete="off" onchange="app.handlers.onTipoCajaChange('TRASPASO')">
+            <label class="btn btn-outline-dark" for="radioTraspaso">Traspaso</label>
+          </div>
+
+          <!-- Formulario Gasto / Ingreso -->
+          <form id="formCajaEstandar" onsubmit="app.actions.handleGuardarCajaEstandar(event)">
+            <input type="date" class="form-control mb-3" id="txtFechaCaja" required>
+            
+            <div class="input-group mb-3">
+              <span class="input-group-text fw-bold">€</span>
+              <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="txtImporteCaja" placeholder="0.00" required>
+            </div>
+            
+            <input type="text" class="form-control mb-3" id="txtProveedorCaja" placeholder="Proveedor / Destinatario" maxlength="120" required>
+            <input type="text" class="form-control mb-3" id="txtConceptoCaja" placeholder="Concepto del ticket / pago" maxlength="150" required>
+            <textarea class="form-control mb-3" id="taObsCaja" rows="2" placeholder="Observaciones (opcional)" maxlength="250"></textarea>
+
+            <label class="small fw-bold mb-1 d-block">Foto Ticket / Comprobante</label>
+            <input type="file" class="d-none" id="fileFotoCaja" accept="image/*" capture="environment" onchange="app.handlers.onFotoCajaSelected(this)">
+            <div class="d-flex gap-2 mb-2">
+              <button type="button" class="btn btn-outline-secondary flex-fill" onclick="document.getElementById('fileFotoCaja').click()"><i class="bi bi-camera"></i> Foto</button>
+            </div>
+            <div class="preview-container mb-3" id="boxPreviewCaja">
+              <img id="imgPreviewCaja" class="d-none">
+              <small class="text-muted" id="lblPlaceholderCaja">Sin ticket adjunto</small>
+            </div>
+
+            <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarCaja">Registrar en Caja</button>
+          </form>
+
+          <!-- Formulario Traspaso Efectivo entre Usuarios -->
+          <form id="formCajaTraspaso" class="d-none" onsubmit="app.actions.handleGuardarTraspasoCaja(event)">
+            <input type="date" class="form-control mb-3" id="txtFechaTraspasoCaja" required>
+            
+            <div class="input-group mb-3">
+              <span class="input-group-text fw-bold">€</span>
+              <input type="number" step="0.01" class="form-control form-control-lg fw-bold" id="txtImporteTraspasoCaja" placeholder="0.00" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary">Traspasar efectivo a:</label>
+              <select class="form-select form-select-lg" id="selUsuarioDestinoCaja" required></select>
+            </div>
+
+            <textarea class="form-control mb-3" id="taObsTraspasoCaja" rows="2" placeholder="Motivo o referencia del traspaso" maxlength="200"></textarea>
+
+            <button type="submit" class="btn btn-dark-custom w-100 py-3 submit-btn" id="btnGuardarTraspasoCaja">Confirmar Traspaso de Dinero</button>
+          </form>
+
+        </div>
+      </div>
+
+      <!-- MÓDULO 2: ALMACÉN Y MOVIMIENTOS -->
+      <div id="moduleAlmacen" class="d-none px-1 pb-4">
+        
+        <!-- Stock de Almacén Activo -->
+        <div class="card card-custom mb-3">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+            <span class="fw-bold small"><i class="bi bi-boxes me-1"></i>Stock en <span id="lblTituloStockAlm">Almacén</span></span>
+            <button class="btn btn-sm btn-light border" onclick="app.actions.cargarStockAlmacenActivo()"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div class="table-responsive p-0" style="max-height: 180px;">
+            <table class="table table-sm table-striped mb-0">
+              <tbody id="tbodyStockAlm"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Formulario Operativo de Movimientos -->
+        <div class="card card-custom p-3 mb-3">
+          <h6 class="fw-bold mb-3"><i class="bi bi-arrow-left-right me-1"></i>Nuevo Movimiento</h6>
+          <form id="formInventario" onsubmit="app.actions.handleGuardarMovimientoInventario(event)">
+            
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-secondary">Operación *</label>
+              <select class="form-select fw-bold" id="selTipoMovimiento" onchange="app.handlers.onTipoMovimientoChange()" required>
+                <option value="SALIDA">📤 SALIDA (A Cliente)</option>
+                <option value="TRASPASO">🔄 TRASPASO (Entre Almacenes)</option>
+                <option value="ENTRADA">📥 ENTRADA (De Proveedor / Devolución)</option>
+              </select>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-bold text-secondary">Origen *</label>
+                <select class="form-select form-select-sm" id="selOrigenMov" required></select>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold text-secondary">Destino *</label>
+                <select class="form-select form-select-sm" id="selDestinoMov" required></select>
+              </div>
+            </div>
+
+            <!-- Datos de Cliente (Visibles si aplica firma/albarán cliente) -->
+            <div id="seccionCliente" class="p-2 mb-3 border rounded bg-light">
+              <span class="fw-bold small text-dark d-block mb-2"><i class="bi bi-person-badge me-1"></i>Datos del Cliente</span>
+              <input type="text" class="form-control form-control-sm mb-2" id="txtClienteReceptor" placeholder="Nombre y Apellidos Receptor *" required>
+              <input type="email" class="form-control form-control-sm mb-2" id="txtClienteEmail" placeholder="Email Receptor (para enviar albarán) *" required>
+              <input type="text" class="form-control form-control-sm mb-2" id="txtClienteEmpresa" placeholder="Empresa / Razón Social (opcional)">
+              <input type="text" class="form-control form-control-sm mb-2" id="txtClienteCif" placeholder="CIF / NIF (opcional)">
+              <input type="text" class="form-control form-control-sm" id="txtClienteDireccion" placeholder="Dirección de Entrega (opcional)">
+            </div>
+
+            <!-- Materiales -->
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="small fw-bold text-secondary mb-0">Materiales / Muebles *</label>
+                <button type="button" class="btn btn-sm btn-outline-dark rounded-pill" onclick="app.handlers.agregarFilaMaterial()"><i class="bi bi-plus-lg"></i> Añadir</button>
+              </div>
+              <div id="contenedorMateriales"></div>
+            </div>
+
+            <!-- Foto Factura (en caso de Entrada Proveedor) -->
+            <div id="seccionFotoProveedor" class="mb-3 d-none">
+              <label class="small fw-bold mb-1 d-block">Foto Factura / Albarán Compra</label>
+              <input type="file" class="d-none" id="fileFotoDoc" accept="image/*" capture="environment" onchange="app.handlers.onFotoDocSelected(this)">
+              <button type="button" class="btn btn-sm btn-outline-secondary w-100 mb-2" onclick="document.getElementById('fileFotoDoc').click()"><i class="bi bi-camera"></i> Tomar Foto</button>
+              <div class="preview-container" id="boxPreviewDoc">
+                <img id="imgPreviewDoc" class="d-none">
+                <small class="text-muted" id="lblPlaceholderDoc">Sin foto</small>
+              </div>
+            </div>
+
+            <!-- Cuadro de Firma Táctil -->
+            <div id="seccionFirma" class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="small fw-bold text-secondary mb-0">Firma del Receptor *</label>
+                <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0" onclick="app.handlers.limpiarFirma()">Borrar firma</button>
+              </div>
+              <div class="signature-pad-box">
+                <canvas id="padFirma"></canvas>
+              </div>
+            </div>
+
+            <textarea class="form-control mb-3" id="txtObsMov" rows="2" placeholder="Observaciones adicionales..." maxlength="250"></textarea>
+
+            <button type="submit" class="btn btn-dark-custom w-100 py-3 fs-5 submit-btn" id="btnGuardarMov">Generar Albarán y Guardar</button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- MÓDULO 3: HISTORIAL DE ALBARANES -->
+      <div id="moduleAlbaranes" class="d-none px-1 pb-4">
+        <div class="card card-custom p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-receipt me-1"></i>Últimos 10 Albaranes</h6>
+            <button class="btn btn-sm btn-light border" onclick="app.actions.cargarUltimosAlbaranes()"><i class="bi bi-arrow-clockwise"></i></button>
+          </div>
+          <div id="contenedorAlbaranesLista"></div>
+        </div>
+      </div>
+
+      <!-- BARRA DE NAVEGACIÓN INFERIOR (3 PESTAÑAS) -->
+      <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item-bottom active" id="nav-cartera" onclick="app.ui.switchModule('cartera')">
+          <i class="bi bi-wallet2"></i>Cartera
+        </div>
+        <div class="nav-item-bottom" id="nav-almacen" onclick="app.ui.switchModule('almacen')">
+          <i class="bi bi-box-seam"></i>Movimientos
+        </div>
+        <div class="nav-item-bottom" id="nav-albaranes" onclick="app.ui.switchModule('albaranes')">
+          <i class="bi bi-file-earmark-text"></i>Albaranes
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const app = {
+      config: {
+        apiUrl: URL_APPS_SCRIPT_AQUI,
+        timeoutMs: 40000,
+        maxImageSize: 819200
+      },
+
+      state: {
+        token: null, usuario: null, nombreCompleto: null, esAdmin: false,
+        almacenes: [], almacenActivo: '',
+        catalogo: {}, catalogoMap: {},
+        stockAlmacenActivo: {},
+        usuariosEfectivo: [],
+        fotoCajaB64: '', fotoDocB64: '',
+        haFirmado: false
+      },
+
+      signature: {
+        canvas: null, ctx: null, dibujando: false,
+        init() {
+          this.canvas = document.getElementById('padFirma');
+          if (!this.canvas) return;
+          this.ctx = this.canvas.getContext('2d');
+          
+          const rect = this.canvas.getBoundingClientRect();
+          this.canvas.width = rect.width;
+          this.canvas.height = 160;
+
+          this.ctx.strokeStyle = '#000';
+          this.ctx.lineWidth = 2;
+          this.ctx.lineCap = 'round';
+
+          const start = (e) => {
+            this.dibujando = true;
+            app.state.haFirmado = true;
+            this.ctx.beginPath();
+            const p = this.getPos(e);
+            this.ctx.moveTo(p.x, p.y);
+          };
+          const move = (e) => {
+            if (!this.dibujando) return;
+            e.preventDefault();
+            const p = this.getPos(e);
+            this.ctx.lineTo(p.x, p.y);
+            this.ctx.stroke();
+          };
+          const stop = () => { this.dibujando = false; };
+
+          this.canvas.addEventListener('mousedown', start);
+          this.canvas.addEventListener('mousemove', move);
+          window.addEventListener('mouseup', stop);
+
+          this.canvas.addEventListener('touchstart', start, { passive: false });
+          this.canvas.addEventListener('touchmove', move, { passive: false });
+          window.addEventListener('touchend', stop);
+        },
+        getPos(e) {
+          const rect = this.canvas.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          return { x: clientX - rect.left, y: clientY - rect.top };
+        },
+        limpiar() {
+          if (!this.ctx) return;
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          app.state.haFirmado = false;
+        },
+        getBase64() {
+          return app.state.haFirmado ? this.canvas.toDataURL('image/png') : '';
+        }
+      },
+
+      ui: {
+        setLoader(show, text = 'Procesando...') {
+          document.getElementById('loaderOverlay').style.display = show ? 'flex' : 'none';
+          document.getElementById('loaderStatusText').textContent = text;
+        },
+        showToast(msg, type = 'success') {
+          const tC = document.getElementById('toastContainer');
+          const toast = document.createElement('div');
+          toast.className = `toast align-items-center text-bg-${type} border-0 show mb-2 shadow`;
+          const wrap = document.createElement('div'); wrap.className = 'd-flex';
+          const body = document.createElement('div'); body.className = 'toast-body fw-bold'; body.textContent = msg;
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn-close btn-close-white me-2 m-auto';
+          btn.onclick = () => toast.remove();
+          wrap.appendChild(body); wrap.appendChild(btn); toast.appendChild(wrap);
+          tC.appendChild(toast);
+          setTimeout(() => toast.remove(), 3500);
+        },
+        switchModule(mod) {
+          ['cartera', 'almacen', 'albaranes'].forEach(m => {
+            const btn = document.getElementById('nav-' + m);
+            const view = document.getElementById('module' + m.charAt(0).toUpperCase() + m.slice(1));
+            if (btn) btn.classList.remove('active');
+            if (view) view.classList.add('d-none');
+          });
+          const actBtn = document.getElementById('nav-' + mod);
+          const actView = document.getElementById('module' + mod.charAt(0).toUpperCase() + mod.slice(1));
+          if (actBtn) actBtn.classList.add('active');
+          if (actView) actView.classList.remove('d-none');
+
+          if (mod === 'cartera') app.actions.cargarSaldoEfectivo();
+          if (mod === 'almacen') {
+            app.actions.cargarStockAlmacenActivo();
+            setTimeout(() => app.signature.init(), 100);
+          }
+          if (mod === 'albaranes') app.actions.cargarUltimosAlbaranes();
+        },
+        renderStockTable(stockObj) {
+          const tbody = document.getElementById('tbodyStockAlm');
+          tbody.replaceChildren();
+          const keys = Object.keys(stockObj || {});
+          if (keys.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.className = 'text-center text-muted py-2';
+            td.textContent = 'Sin existencias en este almacén';
+            tr.appendChild(td); tbody.appendChild(tr);
+            return;
+          }
+          keys.sort().forEach(id => {
+            const m = app.state.catalogoMap[id] || { nom: id, uni: 'UD' };
+            const cant = stockObj[id];
+            const tr = document.createElement('tr');
+            if (cant < 0) tr.className = 'table-danger';
+
+            const tdNom = document.createElement('td');
+            tdNom.textContent = `${m.nom} (${id})`;
+            const tdCant = document.createElement('td');
+            tdCant.className = 'text-end fw-bold';
+            tdCant.textContent = `${cant} ${m.uni}`;
+
+            tr.appendChild(tdNom); tr.appendChild(tdCant); tbody.appendChild(tr);
+          });
+        }
+      },
+
+      utils: {
+        async compress(file) {
+          const bmp = await createImageBitmap(file);
+          let w = bmp.width, h = bmp.height, max = 1400, q = 0.8;
+          if (w > max || h > max) {
+            if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+          }
+          const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0, w, h);
+          let blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+          bmp.close();
+          return new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(blob); });
+        },
+        generarIdem(prefijo) {
+          const arr = new Uint8Array(8);
+          crypto.getRandomValues(arr);
+          return `${prefijo}_${Date.now()}_` + Array.from(arr, b => ('0' + b.toString(16)).slice(-2)).join('');
+        },
+        generarNumAlbaran() {
+          const d = new Date();
+          const pad = (n) => String(n).padStart(2, '0');
+          return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+        }
+      },
+
+      api: {
+        async req(accion, payload = {}) {
+          if (!navigator.onLine) {
+            app.ui.showToast('Sin conexión.', 'danger');
+            throw new Error('OFFLINE');
+          }
+          const body = JSON.stringify({ accion, ...payload });
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), app.config.timeoutMs);
+          try {
+            const res = await fetch(app.config.apiUrl, {
+              method: 'POST',
+              body: body,
+              redirect: 'follow',
+              signal: ctrl.signal
+            });
+            clearTimeout(tid);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (data.sessionExpired) app.actions.handleLogout();
+            return data;
+          } catch (e) {
+            clearTimeout(tid);
+            throw e;
+          }
+        }
+      },
+
+      handlers: {
+        onCambioAlmacenActivo() {
+          const sel = document.getElementById('selAlmacenActivo');
+          app.state.almacenActivo = sel.value;
+          sessionStorage.setItem('ALM_ACTIVO', sel.value);
+          document.getElementById('lblTituloStockAlm').textContent = sel.value;
+          app.actions.cargarStockAlmacenActivo();
+          app.handlers.onTipoMovimientoChange();
+        },
+
+        onTipoCajaChange(tipo) {
+          const fStd = document.getElementById('formCajaEstandar');
+          const fTrf = document.getElementById('formCajaTraspaso');
+          if (tipo === 'TRASPASO') {
+            fStd.classList.add('d-none');
+            fTrf.classList.remove('d-none');
+          } else {
+            fStd.classList.remove('d-none');
+            fTrf.classList.add('d-none');
+          }
+        },
+
+        async onFotoCajaSelected(input) {
+          const f = input.files[0];
+          if (!f) return;
+          app.ui.setLoader(true, 'Procesando imagen...');
+          try {
+            app.state.fotoCajaB64 = await app.utils.compress(f);
+            document.getElementById('imgPreviewCaja').src = app.state.fotoCajaB64;
+            document.getElementById('imgPreviewCaja').classList.remove('d-none');
+            document.getElementById('lblPlaceholderCaja').classList.add('d-none');
+          } catch (e) {
+            app.ui.showToast('Error procesando imagen', 'danger');
+          } finally { app.ui.setLoader(false); }
+        },
+
+        async onFotoDocSelected(input) {
+          const f = input.files[0];
+          if (!f) return;
+          app.ui.setLoader(true, 'Procesando comprobante...');
+          try {
+            app.state.fotoDocB64 = await app.utils.compress(f);
+            document.getElementById('imgPreviewDoc').src = app.state.fotoDocB64;
+            document.getElementById('imgPreviewDoc').classList.remove('d-none');
+            document.getElementById('lblPlaceholderDoc').classList.add('d-none');
+          } catch (e) {
+            app.ui.showToast('Error procesando imagen', 'danger');
+          } finally { app.ui.setLoader(false); }
+        },
+
+        limpiarFirma() {
+          app.signature.limpiar();
+        },
+
+        onTipoMovimientoChange() {
+          const tipo = document.getElementById('selTipoMovimiento').value;
+          const sOri = document.getElementById('selOrigenMov');
+          const sDes = document.getElementById('selDestinoMov');
+          const secCli = document.getElementById('seccionCliente');
+          const secDoc = document.getElementById('seccionFotoProveedor');
+          const secFir = document.getElementById('seccionFirma');
+
+          sOri.replaceChildren();
+          sDes.replaceChildren();
+
+          const alm = app.state.almacenActivo || (app.state.almacenes[0] || 'CENTRAL');
+
+          if (tipo === 'SALIDA') {
+            const optO = document.createElement('option'); optO.value = alm; optO.textContent = alm;
+            sOri.appendChild(optO);
+            sOri.disabled = true;
+
+            const optD = document.createElement('option'); optD.value = 'CLIENTE'; optD.textContent = 'CLIENTE';
+            sDes.appendChild(optD);
+            sDes.disabled = true;
+
+            secCli.classList.remove('d-none');
+            secDoc.classList.add('d-none');
+            secFir.classList.remove('d-none');
+            document.getElementById('txtClienteReceptor').required = true;
+            document.getElementById('txtClienteEmail').required = true;
+
+          } else if (tipo === 'TRASPASO') {
+            const optO = document.createElement('option'); optO.value = alm; optO.textContent = alm;
+            sOri.appendChild(optO);
+            sOri.disabled = true;
+
+            sDes.disabled = false;
+            app.state.almacenes.forEach(a => {
+              if (a !== alm) {
+                const opt = document.createElement('option'); opt.value = a; opt.textContent = a;
+                sDes.appendChild(opt);
+              }
+            });
+
+            secCli.classList.remove('d-none');
+            secDoc.classList.add('d-none');
+            secFir.classList.remove('d-none');
+            document.getElementById('txtClienteReceptor').required = true;
+            document.getElementById('txtClienteEmail').required = false;
+
+          } else if (tipo === 'ENTRADA') {
+            sOri.disabled = false;
+            const optP = document.createElement('option'); optP.value = 'PROVEEDOR'; optP.textContent = 'PROVEEDOR';
+            const optC = document.createElement('option'); optC.value = 'CLIENTE'; optC.textContent = 'CLIENTE (Devolución)';
+            sOri.appendChild(optP); sOri.appendChild(optC);
+
+            const optD = document.createElement('option'); optD.value = alm; optD.textContent = alm;
+            sDes.appendChild(optD);
+            sDes.disabled = true;
+
+            sOri.onchange = function() {
+              if (sOri.value === 'CLIENTE') {
+                secCli.classList.remove('d-none');
+                secFir.classList.remove('d-none');
+                secDoc.classList.add('d-none');
+                document.getElementById('txtClienteReceptor').required = true;
+                document.getElementById('txtClienteEmail').required = true;
+              } else {
+                secCli.classList.add('d-none');
+                secFir.classList.add('d-none');
+                secDoc.classList.remove('d-none');
+                document.getElementById('txtClienteReceptor').required = false;
+                document.getElementById('txtClienteEmail').required = false;
+              }
+            };
+            sOri.onchange();
+          }
+        },
+
+        agregarFilaMaterial() {
+          const cont = document.getElementById('contenedorMateriales');
+          const rId = 'mat_row_' + Date.now();
+          const div = document.createElement('div');
+          div.className = 'mat-row';
+          div.id = rId;
+
+          const selCat = document.createElement('select'); selCat.className = 'form-select form-select-sm mb-1';
+          const optCatDef = document.createElement('option'); optCatDef.value = ''; optCatDef.textContent = '-- Categoría --';
+          selCat.appendChild(optCatDef);
+          Object.keys(app.state.catalogo).sort().forEach(cat => {
+            const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat;
+            selCat.appendChild(opt);
+          });
+
+          const selMat = document.createElement('select'); selMat.className = 'form-select form-select-sm mb-2 sel-articulo';
+          selMat.disabled = true;
+          const optMatDef = document.createElement('option'); optMatDef.value = ''; optMatDef.textContent = '-- Seleccione Material --';
+          selMat.appendChild(optMatDef);
+
+          selCat.onchange = () => {
+            selMat.replaceChildren();
+            selMat.appendChild(optMatDef);
+            const items = app.state.catalogo[selCat.value] || [];
+            items.forEach(it => {
+              const opt = document.createElement('option'); opt.value = it.id; opt.textContent = `${it.nombre} (${it.unidad})`;
+              selMat.appendChild(opt);
+            });
+            selMat.disabled = (items.length === 0);
+          };
+
+          const dFlex = document.createElement('div'); dFlex.className = 'd-flex gap-2';
+          const inpCant = document.createElement('input'); inpCant.type = 'number'; inpCant.step = '1'; inpCant.className = 'form-control form-control-sm txt-cantidad';
+          inpCant.placeholder = 'Cantidad'; inpCant.required = true;
+
+          const btnDel = document.createElement('button'); btnDel.type = 'button'; btnDel.className = 'btn btn-outline-danger btn-sm';
+          btnDel.innerHTML = '<i class="bi bi-trash"></i>';
+          btnDel.onclick = () => div.remove();
+
+          dFlex.appendChild(inpCant); dFlex.appendChild(btnDel);
+          div.appendChild(selCat); div.appendChild(selMat); div.appendChild(dFlex);
+          cont.appendChild(div);
+        }
+      },
+
+      actions: {
+        async handleLogin(e) {
+          e.preventDefault();
+          const u = document.getElementById('inputUser').value.trim();
+          const p = document.getElementById('inputPass').value.trim();
+
+          app.ui.setLoader(true, 'Verificando credenciales...');
+          try {
+            const res = await app.api.req('login', { usuario: u, clave: p });
+            if (res.success) {
+              sessionStorage.setItem('T', res.token);
+              app.state.token = res.token;
+              document.getElementById('inputPass').value = '';
+              await app.actions.boot();
+            } else {
+              app.ui.showToast(res.error || 'Credenciales inválidas', 'danger');
+            }
+          } catch (e) {
+            app.ui.showToast('Error conectando con el servidor', 'danger');
+          } finally {
+            app.ui.setLoader(false);
+          }
+        },
+
+        handleLogout() {
+          app.api.req('logout', { token: app.state.token }).catch(()=>{});
+          sessionStorage.clear();
+          location.reload();
+        },
+
+        async boot() {
+          if (!app.state.token) {
+            app.state.token = sessionStorage.getItem('T');
+            if (!app.state.token) return;
+          }
+
+          app.ui.setLoader(true, 'Cargando datos...');
+          try {
+            const res = await app.api.req('initData', { token: app.state.token });
+            if (res.success) {
+              app.state.usuario = res.usuario;
+              app.state.nombreCompleto = res.nombreCompleto;
+              app.state.esAdmin = Boolean(res.esAdmin);
+              app.state.almacenes = res.almacenesAsignados || [];
+              app.state.catalogo = res.catalogo || {};
+              app.state.catalogoMap = res.catalogoMap || {};
+              app.state.usuariosEfectivo = res.usuariosEfectivo || [];
+
+              document.getElementById('labelUsuarioSesion').textContent = res.nombreCompleto;
+              document.getElementById('labelUserCode').textContent = res.usuario;
+              document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.saldoEfectivo || 0).toFixed(2) + ' €';
+
+              // Poblar selector de almacenes asignados
+              const selAlm = document.getElementById('selAlmacenActivo');
+              selAlm.replaceChildren();
+              app.state.almacenes.forEach(a => {
+                const opt = document.createElement('option'); opt.value = a; opt.textContent = a;
+                selAlm.appendChild(opt);
+              });
+
+              const savedAlm = sessionStorage.getItem('ALM_ACTIVO');
+              if (savedAlm && app.state.almacenes.includes(savedAlm)) {
+                selAlm.value = savedAlm;
+              }
+              app.state.almacenActivo = selAlm.value;
+              document.getElementById('lblTituloStockAlm').textContent = app.state.almacenActivo;
+
+              // Poblar selector de usuarios para traspasos de efectivo
+              const selUsrDest = document.getElementById('selUsuarioDestinoCaja');
+              selUsrDest.replaceChildren();
+              app.state.usuariosEfectivo.forEach(u => {
+                if (u.usuario !== app.state.usuario) {
+                  const opt = document.createElement('option'); opt.value = u.usuario; opt.textContent = `${u.nombre} (${u.usuario})`;
+                  selUsrDest.appendChild(opt);
+                }
+              });
+
+              document.getElementById('txtFechaCaja').valueAsDate = new Date();
+              document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
+
+              document.getElementById('viewLogin').classList.add('d-none');
+              document.getElementById('viewMain').classList.remove('d-none');
+
+              app.handlers.onTipoMovimientoChange();
+              app.actions.cargarStockAlmacenActivo();
+            }
+          } catch (e) {
+            app.ui.showToast('Error cargando datos de inicio', 'danger');
+          } finally {
+            app.ui.setLoader(false);
+          }
+        },
+
+        async cargarSaldoEfectivo() {
+          try {
+            const res = await app.api.req('obtenerSaldoEfectivo', { token: app.state.token });
+            if (res.success) {
+              document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.saldo || 0).toFixed(2) + ' €';
+            }
+          } catch (e) {}
+        },
+
+        async cargarStockAlmacenActivo() {
+          if (!app.state.almacenActivo) return;
+          try {
+            const res = await app.api.req('obtenerStockAlmacen', { token: app.state.token, almacen: app.state.almacenActivo });
+            if (res.success) {
+              app.state.stockAlmacenActivo = res.stock || {};
+              app.ui.renderStockTable(res.stock);
+            }
+          } catch (e) {}
+        },
+
+        async handleGuardarCajaEstandar(e) {
+          e.preventDefault();
+          const btns = document.querySelectorAll('.submit-btn'); btns.forEach(b => b.disabled = true);
+          app.ui.setLoader(true, 'Registrando en caja...');
+
+          const tipo = document.getElementById('radioIngreso').checked ? 'INGRESO' : 'GASTO';
+          const idem = app.utils.generarIdem('CAJA');
+
+          try {
+            const res = await app.api.req('registrarMovimientoEfectivo', {
+              token: app.state.token,
+              payload: {
+                idempotencyKey: idem,
+                fecha: document.getElementById('txtFechaCaja').value,
+                tipo: tipo,
+                importe: document.getElementById('txtImporteCaja').value,
+                proveedor: document.getElementById('txtProveedorCaja').value,
+                concepto: document.getElementById('txtConceptoCaja').value,
+                comentarios: document.getElementById('taObsCaja').value,
+                fotoFacturaBase64: app.state.fotoCajaB64
+              }
+            });
+
+            if (res.success) {
+              app.ui.showToast('✅ Movimiento registrado', 'success');
+              document.getElementById('formCajaEstandar').reset();
+              document.getElementById('txtFechaCaja').valueAsDate = new Date();
+              app.state.fotoCajaB64 = '';
+              document.getElementById('imgPreviewCaja').classList.add('d-none');
+              document.getElementById('lblPlaceholderCaja').classList.remove('d-none');
+              document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.nuevoSaldo || 0).toFixed(2) + ' €';
+            } else {
+              app.ui.showToast(res.error || 'Error registrando', 'danger');
+            }
+          } catch (err) {
+            app.ui.showToast('Error de conexión', 'danger');
+          } finally {
+            btns.forEach(b => b.disabled = false); app.ui.setLoader(false);
+          }
+        },
+
+        async handleGuardarTraspasoCaja(e) {
+          e.preventDefault();
+          const btns = document.querySelectorAll('.submit-btn'); btns.forEach(b => b.disabled = true);
+          app.ui.setLoader(true, 'Procesando traspaso...');
+
+          const idem = app.utils.generarIdem('TRF_EFEC');
+          const selUsr = document.getElementById('selUsuarioDestinoCaja');
+
+          try {
+            const res = await app.api.req('registrarTraspasoEfectivo', {
+              token: app.state.token,
+              payload: {
+                idempotencyKey: idem,
+                fecha: document.getElementById('txtFechaTraspasoCaja').value,
+                importe: document.getElementById('txtImporteTraspasoCaja').value,
+                usuarioDestino: selUsr.value,
+                nombreDestino: selUsr.options[selUsr.selectedIndex].text,
+                comentarios: document.getElementById('taObsTraspasoCaja').value
+              }
+            });
+
+            if (res.success) {
+              app.ui.showToast('✅ Traspaso completado con éxito', 'success');
+              document.getElementById('formCajaTraspaso').reset();
+              document.getElementById('txtFechaTraspasoCaja').valueAsDate = new Date();
+              document.getElementById('radioGasto').click();
+              document.getElementById('lblSaldoEfectivo').textContent = parseFloat(res.nuevoSaldo || 0).toFixed(2) + ' €';
+            } else {
+              app.ui.showToast(res.error || 'Error en el traspaso', 'danger');
+            }
+          } catch (err) {
+            app.ui.showToast('Error de comunicación', 'danger');
+          } finally {
+            btns.forEach(b => b.disabled = false); app.ui.setLoader(false);
+          }
+        },
+
+        async handleGuardarMovimientoInventario(e) {
+          e.preventDefault();
+          const tipoMov = document.getElementById('selTipoMovimiento').value;
+          const origen = document.getElementById('selOrigenMov').value;
+          const destino = document.getElementById('selDestinoMov').value;
+
+          const filasMat = document.querySelectorAll('#contenedorMateriales .mat-row');
+          if (filasMat.length === 0) {
+            app.ui.showToast('Añada al menos un artículo', 'warning');
+            return;
+          }
+
+          const articulos = [];
+          filasMat.forEach(row => {
+            const sel = row.querySelector('.sel-articulo');
+            const inp = row.querySelector('.txt-cantidad');
+            if (sel && sel.value && inp && parseFloat(inp.value) > 0) {
+              articulos.push({
+                id: sel.value,
+                nombre: app.state.catalogoMap[sel.value] ? app.state.catalogoMap[sel.value].nom : sel.value,
+                cantidad: parseFloat(inp.value)
+              });
+            }
+          });
+
+          if (articulos.length === 0) {
+            app.ui.showToast('Revise que los materiales y cantidades sean válidos', 'warning');
+            return;
+          }
+
+          const esCliente = (tipoMov === 'SALIDA') || (tipoMov === 'ENTRADA' && origen === 'CLIENTE') || (tipoMov === 'TRASPASO');
+          let firmaB64 = '';
+          if (esCliente) {
+            if (!app.state.haFirmado) {
+              app.ui.showToast('La firma en pantalla es obligatoria', 'warning');
+              return;
+            }
+            firmaB64 = app.signature.getBase64();
+          }
+
+          const btns = document.querySelectorAll('.submit-btn'); btns.forEach(b => b.disabled = true);
+          app.ui.setLoader(true, 'Generando albarán y procesando...');
+
+          const numAlbaran = app.utils.generarNumAlbaran();
+          const idem = app.utils.generarIdem('INV');
+
+          const payload = {
+            idempotencyKey: idem,
+            tipoMovimiento: tipoMov,
+            numAlbaran: numAlbaran,
+            origen: origen,
+            destino: destino,
+            origenTipo: origen,
+            articulos: articulos,
+            observaciones: document.getElementById('txtObsMov').value,
+            firmaBase64: firmaB64,
+            fotoDocBase64: app.state.fotoDocB64,
+            cliente: {
+              nombreReceptor: document.getElementById('txtClienteReceptor').value.trim(),
+              email: document.getElementById('txtClienteEmail').value.trim(),
+              empresa: document.getElementById('txtClienteEmpresa').value.trim(),
+              cif: document.getElementById('txtClienteCif').value.trim(),
+              direccion: document.getElementById('txtClienteDireccion').value.trim()
+            }
+          };
+
+          try {
+            const res = await app.api.req('registrarMovimientoInventario', {
+              token: app.state.token,
+              payload: payload
+            });
+
+            if (res.success) {
+              app.ui.showToast(`✅ Albarán ${numAlbaran} generado`, 'success');
+              document.getElementById('formInventario').reset();
+              document.getElementById('contenedorMateriales').replaceChildren();
+              app.signature.limpiar();
+              app.state.fotoDocB64 = '';
+              document.getElementById('imgPreviewDoc').classList.add('d-none');
+              document.getElementById('lblPlaceholderDoc').classList.remove('d-none');
+              app.handlers.onTipoMovimientoChange();
+              app.actions.cargarStockAlmacenActivo();
+            } else {
+              app.ui.showToast(res.error || 'Error al procesar movimiento', 'danger');
+            }
+          } catch (err) {
+            app.ui.showToast('Error de comunicación con el servidor', 'danger');
+          } finally {
+            btns.forEach(b => b.disabled = false); app.ui.setLoader(false);
+          }
+        },
+
+        async cargarUltimosAlbaranes() {
+          const cont = document.getElementById('contenedorAlbaranesLista');
+          cont.replaceChildren();
+          app.ui.setLoader(true, 'Cargando historial...');
+
+          try {
+            const res = await app.api.req('obtenerUltimosAlbaranes', { token: app.state.token });
+            if (res.success && res.albaranes) {
+              if (res.albaranes.length === 0) {
+                cont.innerHTML = '<div class="text-center text-muted py-3">No hay albaranes registrados</div>';
+                return;
+              }
+
+              res.albaranes.forEach(alb => {
+                const card = document.createElement('div');
+                card.className = 'border rounded p-2 mb-2 bg-light';
+
+                const dTop = document.createElement('div');
+                dTop.className = 'd-flex justify-content-between align-items-center mb-1';
+                dTop.innerHTML = `<span class="fw-bold">${alb.numAlbaran}</span><span class="badge bg-dark">${alb.tipo}</span>`;
+
+                const dMid = document.createElement('div');
+                dMid.className = 'small text-secondary mb-1';
+                dMid.textContent = `Fecha: ${alb.fecha} | De: ${alb.origen} ➔ A: ${alb.destino}`;
+
+                const dBot = document.createElement('div');
+                dBot.className = 'd-flex justify-content-between align-items-center mt-2';
+                
+                let resumen = alb.articulos.map(a => `${a.cantidad}x ${a.nombre}`).join(', ');
+                if (resumen.length > 35) resumen = resumen.substring(0, 35) + '...';
+                
+                const spanRes = document.createElement('small');
+                spanRes.className = 'text-muted';
+                spanRes.textContent = resumen;
+
+                dBot.appendChild(spanRes);
+
+                if (alb.urlPdf) {
+                  const aLink = document.createElement('a');
+                  aLink.href = alb.urlPdf;
+                  aLink.target = '_blank';
+                  aLink.className = 'btn btn-sm btn-outline-dark py-0';
+                  aLink.innerHTML = '<i class="bi bi-file-pdf me-1"></i>PDF';
+                  dBot.appendChild(aLink);
+                }
+
+                card.appendChild(dTop);
+                card.appendChild(dMid);
+                card.appendChild(dBot);
+                cont.appendChild(card);
+              });
+            }
+          } catch (e) {
+            app.ui.showToast('Error cargando albaranes', 'danger');
+          } finally {
+            app.ui.setLoader(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('online', () => { document.getElementById('offlineWarning').style.display = 'none'; });
+    window.addEventListener('offline', () => { document.getElementById('offlineWarning').style.display = 'block'; });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      app.actions.boot();
+    });
+  </script>
+</body>
+</html>
